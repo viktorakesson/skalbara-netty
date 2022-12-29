@@ -40,7 +40,8 @@ public class ReverseProxyServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new FrontendHandler(ReverseProxyServer.this));
+                            var p = socketChannel.pipeline();
+                            p.addLast(new FrontendHandler(ReverseProxyServer.this));
                         }
                     })
                     .bind(port)

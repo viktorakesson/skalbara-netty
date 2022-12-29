@@ -65,13 +65,13 @@ public class NodeHandler {
         }
     }
 
-    public void closeNodes(int nrOfNodes) {
-        for (var i = 1; i < nrOfNodes; i++) {
-            var node = activeNodes.get(activeNodes.size() - i);
-            activeNodes.remove(node);
-            closingQueue.add(node);
-        }
+    public void closeNode() {
 
+        var node = activeNodes.stream().min(Comparator.comparing(n -> n.getConnections().size())).orElseThrow();
+        System.out.println("removing node: " + node.getPort());
+        node.stop();
+        activeNodes.remove(node);
+        closingQueue.add(node);
     }
 
     private void startThread() {
@@ -109,19 +109,54 @@ public class NodeHandler {
         }
     }
 
+    private void removeClosedNodes() {
+
+        var iterator = closingQueue.iterator();
+        while (iterator.hasNext()) {
+            var node = iterator.next();
+            if (!node.getConnections().isEmpty()) continue;
+            node.stop();
+            iterator.remove();
+        }
+
+    }
+
+    private void adjustNumberOfNodes() {
+
+        var currentLoad = activeNodes.stream().mapToInt(Node::getRequests).average();
+        if (currentLoad.isEmpty())
+            return;
+
+        activeNodes.forEach(Node::resetRequests);
+
+        if (currentLoad.getAsDouble() > 3.0 || activeNodes.size() < minimumAmountOfNodes) {
+            startNodes(1);
+        } else if (currentLoad.getAsDouble() < 1.0 && activeNodes.size() > minimumAmountOfNodes) {
+            closeNode();
+        }
+
+    }
+
     public void closeAll() {
         try {
             lock.writeLock().lock();
             alive = false;
+            startingQueue.forEach(Node::stop);
             activeNodes.forEach(Node::stop);
             closingQueue.forEach(Node::stop);
-            startingQueue.forEach(Node::stop);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
     private void runThread() {
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         try {
             lock.writeLock().lock();
             if (!alive) {
@@ -129,17 +164,13 @@ public class NodeHandler {
             }
 
             activateStartedNodes();
-            //checkup();
-        } catch(Exception e) {
+            adjustNumberOfNodes();
+            removeClosedNodes();
+
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             lock.writeLock().unlock();
-        }
-
-        try {
-            Thread.sleep(1000);
-        } catch(Exception e) {
-            e.printStackTrace();
         }
 
         runThread();

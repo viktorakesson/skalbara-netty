@@ -2,6 +2,8 @@ package org.example;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.EmptyByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -23,18 +25,20 @@ public class FrontendHandler extends SimpleChannelInboundHandler<ByteBuf> {
         var b = new Bootstrap();
         var node = server.getNodeHandler().getLeastUsedNode();
 
-
         try {
           this.outboundChannel = b.group(server.getWorkerGroup())
                   .channel(NioSocketChannel.class)
                   .handler(new ChannelInitializer<SocketChannel>() {
                       @Override
                       protected void initChannel(SocketChannel socketChannel) throws Exception {
-                          socketChannel.pipeline().addLast(new BackendHandler(inboundChannel, node));
+                          var p = socketChannel.pipeline();
+                          p.addLast(new BackendHandler(inboundChannel, node, server));
                       }
                   })
                   .connect("localhost", node.getPort())
                   .channel();
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -42,7 +46,6 @@ public class FrontendHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        ctx.channel().close();
         outboundChannel.close();
     }
 
