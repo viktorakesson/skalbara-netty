@@ -9,15 +9,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.util.Scanner;
 
-public class Server {
+public class ReverseProxyServer {
 
+    private final NodeHandler nodeHandler;
     private final int port;
     private final EventLoopGroup bossGroup, workerGroup;
 
-    public Server(int port) {
+    public ReverseProxyServer(int port) {
         this.port = port;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
+        this.nodeHandler = new NodeHandler(this);
+    }
+
+    public NodeHandler getNodeHandler() {
+        return nodeHandler;
     }
 
     public EventLoopGroup getWorkerGroup() {
@@ -34,18 +40,17 @@ public class Server {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new Handler(Server.this));
+                            socketChannel.pipeline().addLast(new FrontendHandler(ReverseProxyServer.this));
                         }
                     })
                     .bind(port)
                     .sync()
                     .channel();
 
-
             var scanner = new Scanner(System.in);
             while (!scanner.nextLine().equals("exit"));
-//
-//        nodeHandler.closeAll();
+
+        nodeHandler.closeAll();
         channel.closeFuture().sync();
 
         } catch (Exception e) {
@@ -54,7 +59,6 @@ public class Server {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
-
 
     }
 }
