@@ -43,6 +43,6 @@ public class BackendHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
-        server.getNodeHandler().startNodes(1);
+        server.getNodeHandler().createNodes(1);
     }
 }

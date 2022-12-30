@@ -20,6 +20,7 @@ public class FrontendHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+
         final Channel inboundChannel = ctx.channel();
 
         var b = new Bootstrap();
@@ -47,6 +48,7 @@ public class FrontendHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         outboundChannel.close();
+        ctx.close();
     }
 
     @Override

@@ -16,12 +16,10 @@ public class NodeInitializer extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf) throws Exception {
-
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-
         nodeHandler.activateNode(node);
         System.out.println("Node active: " + node.getPort());
         ctx.close();
@@ -29,8 +27,6 @@ public class NodeInitializer extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
         ctx.close();
-
     }
 }

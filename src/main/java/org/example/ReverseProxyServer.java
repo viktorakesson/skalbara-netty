@@ -51,12 +51,12 @@ public class ReverseProxyServer {
             var scanner = new Scanner(System.in);
             while (!scanner.nextLine().equals("exit"));
 
-        nodeHandler.closeAll();
-        channel.closeFuture().sync();
+            channel.closeFuture().sync();
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            nodeHandler.shutdown();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
