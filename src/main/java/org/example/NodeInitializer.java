@@ -20,7 +20,7 @@ public class NodeInitializer extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        nodeHandler.activateNode(node);
+        nodeHandler.moveNodeToActive(node);
         System.out.println("Node active: " + node.getPort());
         ctx.close();
     }

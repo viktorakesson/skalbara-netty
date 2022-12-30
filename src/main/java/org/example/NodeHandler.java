@@ -1,6 +1,7 @@
 package org.example;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
 
@@ -93,10 +94,11 @@ public class NodeHandler {
         closedNodes.add(node);
     }
 
-    public void activateNode(Node node) {
+    public void moveNodeToActive(Node node) {
 
         try {
             lock.writeLock().lock();
+
             startedNodes.remove(node);
             activeNodes.add(node);
         } catch (Exception e) {
@@ -113,8 +115,10 @@ public class NodeHandler {
                 var b = new Bootstrap();
                 b.group(server.getWorkerGroup())
                         .channel(NioSocketChannel.class)
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
                         .handler(new NodeInitializer(node, this))
-                        .connect("localhost", node.getPort()).sync();
+                        .connect("localhost", node.getPort())
+                        .sync();
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -135,6 +139,7 @@ public class NodeHandler {
     public Node getLeastUsedNode() {
         try {
             lock.readLock().lock();
+
             return activeNodes.stream().min(Comparator.comparing(Node::getRequests)).orElseThrow(RuntimeException::new);
         } finally {
             lock.readLock().unlock();
@@ -143,7 +148,7 @@ public class NodeHandler {
 
     private void balanceLoad() {
 
-        if (activeNodes.size() < minimumAmountOfNodes)
+        if (activeNodes.size() < minimumAmountOfNodes && startedNodes.isEmpty())
             createNodes(1);
 
         var currentLoad = activeNodes.stream().mapToInt(Node::getRequests).average();
